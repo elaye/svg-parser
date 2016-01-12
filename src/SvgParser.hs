@@ -9,70 +9,12 @@ import Text.Parsec ((<?>))
 
 import Control.Applicative
 
-type AttrName = String
-type AttrValue = String
-
-data Attribute = Attribute (AttrName, AttrValue) deriving (Show)
+import Attributes (Attribute, attribute)
 
 data SVG = Element String [Attribute] [SVG]
           | SelfClosingTag String [Attribute]
           | Body String
           deriving (Show)
-
---svgBeginTag :: Parsec String () String
---svgBeginTag = do
---  Parsec.string "<svg"
---  Parsec.manyTill Parsec.anyChar (Parsec.try (Parsec.string ">"))
-
---svgEndTag :: Parsec String () String
---svgEndTag = Parsec.string "</svg>"
-
---path :: Parsec String () String
---path = do
---  Parsec.string "<path"
---  --Parsec.manyTill Parsec.anyChar (Parsec.try Parsec.string ">"))
---  Parsec.manyTill attributes (Parsec.try Parsec.string ">")
-
---quotes :: Parsec String () String
---quotes = Parsec.between (Parsec.char "\"") (Parsec.char "\"")
-
---attribute :: Parsec String () String
---attribute = do
---  Parsec.many1 Parsec.letter
---  Parsec.char "=" 
---  quotes Parsec.string
-
-attribute :: Parsec String () Attribute
-attribute = do
-  name <- Parsec.many (Parsec.noneOf "= />")
-  Parsec.spaces
-  Parsec.char '='
-  --value <- quotes Parsec.string
-  Parsec.char '"'
-  value <- Parsec.many (Parsec.noneOf ['"'])
-  Parsec.char '"'
-  Parsec.spaces
-  return $ Attribute (name, value)
-
-
---attributes :: Parsec String () String
---attributes = do
---  (Parsec.many attribute) `Parsec.sepBy` Parsec.endOfLine 
-
---svgAttrib :: Parsec String () String
---svgAttrib = do
-
-
---skipTillSvg :: Parsec String () String
---skipTillSvg = Parsec.manyTill Parsec.anyChar (Parsec.try svgBeginTag)
-
---skipTillSvg :: Parsec String () String
---skipTillSvg = Parsec.lookAhead svgBeginTag
-
---svg :: Parsec String () String
---svg = do
---  svgBeginTag
---  Parsec.manyTill Parsec.anyChar (Parsec.try svgEndTag)
 
 -- The body of an element, consumes any leading spaces; would be nice to not have the try here
 --elementBody :: Parsec String () Body
