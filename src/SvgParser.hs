@@ -15,6 +15,8 @@ import Attributes (Attribute, attribute)
 data SVG = Element String [Attribute] [SVG]
           | SelfClosingTag String [Attribute]
           | Body String
+          -- | XMLDecl [Attribute]
+          | XMLDecl String
           deriving (Show)
 
 -- The body of an element, consumes any leading spaces; would be nice to not have the try here
@@ -56,18 +58,30 @@ tag = do
 --  Parsec.spaces
 --  Parsec.string "xml"
 --  Parsec.spaces
---  Parsec.many attribute
+--  --attr <- XMLDecl <$> Parsec.many attribute
+--  attr <- XMLDecl <$> attribute `Parsec.sepBy` Parsec.spaces
 --  Parsec.spaces
 --  Parsec.string "?>"
+--  return attr
+
+xmlDecl = do 
+  Parsec.string "<?xml" 
+  decl <- Parsec.many (Parsec.noneOf "?>") 
+  Parsec.string "?>"
+  return $ XMLDecl decl
 
 --svg :: Parsec String () [SVG]
 svg :: Parsec String () SVG
 svg = do
   Parsec.spaces
   --x <- Parsec.many tag
+  --decl <- (Parsec.try xmlDecl <|> tag)
+  --decl <- XMLDecl <$> xmlDecl
+  decl <- xmlDecl
   x <- tag
   Parsec.spaces
   return x
+  --return decl
 
 parse :: String -> IO ()
 parse file = do
