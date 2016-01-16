@@ -32,38 +32,9 @@ data D = MoveToAbs [(Float, Float)]
         | ClosePath
 
 --attribute :: Parsec String () Attribute
---attribute = do
---  name <- Parsec.many (Parsec.noneOf "= />")
---  Parsec.spaces
---  Parsec.char '='
---  --value <- quotes Parsec.string
---  Parsec.char '"'
---  value <- Parsec.many (Parsec.noneOf ['"'])
---  Parsec.char '"'
---  Parsec.spaces
---  return $ mkAttribute (name, value)
---  --return $ Attribute (name, value)
-
---attribute :: Parsec String () Attribute
 attribute = Parsec.spaces *> Parsec.choice attributes <* Parsec.spaces
 
---attribute :: Parsec String () Attribute
---attribute = do
---  name <- Parsec.many (Parsec.noneOf "= />")
---  Parsec.spaces
---  value <- Parsec.char '=' *> betweenQuotes
---  return (name, value)
-
 --betweenQuotes = Parsec.char '"' *> Parsec.many Parsec.anyChar <* Parsec.char '"'
-
---attributes :: [Parsec String () Attribute]
---attributes = 
---  [ width
---  , height
---  , viewBox
---  , d
---  , anyAttr
---  ]
 
 --attributes = map mkParser attrDefs : anyAttr
 attributes :: [Parsec String () Attribute]
@@ -86,14 +57,13 @@ attrDefs =
   , ("d", d)
   ]
 
-digits :: Parsec String () Int
-digits = read <$> Parsec.many1 Parsec.digit
+width = Width <$> digits
 
---attributes = 
---  [ ("width", Width)
---  , ("height", Height)
---  , ("viewBox", (,,,))
---  ]
+height = Height <$> digits
+
+viewBox = ViewBox . tuple4 <$> (map read) <$> (Parsec.many1 Parsec.digit) `Parsec.sepBy` Parsec.spaces
+
+d = D <$> Parsec.many (Parsec.noneOf "\"")
 
 --anyAttr = do
 --  name <- Parsec.many (Parsec.noneOf "= />")
@@ -105,67 +75,8 @@ digits = read <$> Parsec.many1 Parsec.digit
 --  Parsec.char '"'
 --  return $ Attribute (name, val)
 
---width :: Parsec String () Attribute
---width = do
---  Parsec.string "width"
---  Parsec.spaces
---  Parsec.char '='
---  Parsec.spaces
---  Parsec.char '"'
---  val <- digits
---  Parsec.char '"'
---  return $ Width val
-width = Width <$> digits
-
---height :: Parsec String () Attribute
---height = do
---  Parsec.string "height"
---  Parsec.spaces
---  Parsec.char '='
---  Parsec.spaces
---  Parsec.char '"'
---  val <- digits
---  Parsec.char '"'
---  return $ Height val
-height = Height <$> digits
-
---viewBox :: Parsec String () (AttrName, AttrValue)
---viewBox = do
---  Parsec.string "viewBox"
---  Parsec.spaces
---  Parsec.char '='
---  Parsec.spaces
---  Parsec.char '"'
---  --val <- digits
---  val <- tuple4 . map read <$> (Parsec.many1 Parsec.digit) `Parsec.sepBy` Parsec.spaces
---  Parsec.char '"'
---  return $ ViewBox val
-
-viewBox = ViewBox . tuple4 <$> (map read) <$> (Parsec.many1 Parsec.digit) `Parsec.sepBy` Parsec.spaces
-
---d = do
---  Parsec.string "d"
---  Parsec.spaces
---  Parsec.char '='
---  Parsec.spaces
---  Parsec.char '"'
---  --val <- Parsec.many Parsec.anyChar
---  val <- Parsec.many $ Parsec.noneOf "\""
---  Parsec.char '"'
---  return $ D val
-d = D <$> Parsec.many (Parsec.noneOf "\"")
-
-
---quotes :: Parsec String () String
---quotes = Parsec.between (Parsec.symbol "\"") (Parsec.symbol "\"")
-
---mkAttribute :: (String, String) -> Attribute
---mkAttribute (name, value) = case name of
---  "width" -> Width (read value)
---  "height" -> Height (read value)
---  "viewBox" -> ViewBox $ tuple4 $ map read . words $ value
---  "d" -> D value
---  _ -> Attribute (name, value)
+digits :: Parsec String () Int
+digits = read <$> Parsec.many1 Parsec.digit
 
 tuple4 :: [a] -> (a, a, a, a)
 tuple4 [a, b, c, d] = (a, b, c, d)
