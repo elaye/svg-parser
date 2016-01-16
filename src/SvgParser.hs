@@ -1,6 +1,8 @@
 {-# LANGUAGE FlexibleContexts #-}
 module SvgParser
-    ( parse
+    ( SVG(..)
+    , svg
+    , parse
     , clean
     ) where
 
@@ -76,7 +78,7 @@ eol = Parsec.skipMany Parsec.endOfLine
 
 seol = Parsec.spaces <|> eol
 
---svg :: Parsec String () [SVG]
+--| SVG parser.
 svg :: Parsec String () SVG
 svg = do
   Parsec.spaces
@@ -100,6 +102,9 @@ parse file = do
       print svg
       --print (clean svg)
 
+--| Clean the SVG. Remove all the unknown tags and attributes. 
+-- Be carefull because it removes all the tags and attributes that
+-- are not implemented.
 clean :: SVG -> SVG
 clean svg = case svg of
   Element name attrs svgs -> Element name (Attr.clean attrs) (map clean svgs)
