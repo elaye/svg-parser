@@ -1,3 +1,4 @@
+{-# LANGUAGE FlexibleContexts #-}
 module Attributes
 ( Attribute
 , attribute
@@ -56,12 +57,33 @@ attribute = Parsec.spaces *> Parsec.choice attributes <* Parsec.spaces
 --betweenQuotes = Parsec.char '"' *> Parsec.many Parsec.anyChar <* Parsec.char '"'
 
 --attributes :: [Parsec String () Attribute]
-attributes = 
-  [ width
-  , height
-  , viewBox
-  , d
-  , anyAttr
+--attributes = 
+--  [ width
+--  , height
+--  , viewBox
+--  , d
+--  , anyAttr
+--  ]
+
+--attributes = map mkParser attrDefs : anyAttr
+attributes :: [Parsec String () Attribute]
+attributes = map attrParser attrDefs
+
+attrParser (name, parser) = do
+  Parsec.string name
+  Parsec.spaces
+  Parsec.char '='
+  Parsec.spaces
+  Parsec.char '"'
+  val <- parser
+  Parsec.char '"'
+  return $ val
+
+attrDefs =
+  [ ("height", height)
+  , ("width", width)
+  , ("viewBox", viewBox)
+  , ("d", d)
   ]
 
 digits :: Parsec String () Int
@@ -73,60 +95,66 @@ digits = read <$> Parsec.many1 Parsec.digit
 --  , ("viewBox", (,,,))
 --  ]
 
-anyAttr = do
-  name <- Parsec.many (Parsec.noneOf "= />")
-  Parsec.spaces
-  Parsec.char '='
-  Parsec.spaces
-  Parsec.char '"'
-  val <- Parsec.many Parsec.anyChar
-  Parsec.char '"'
-  return $ Attribute (name, val)
+--anyAttr = do
+--  name <- Parsec.many (Parsec.noneOf "= />")
+--  Parsec.spaces
+--  Parsec.char '='
+--  Parsec.spaces
+--  Parsec.char '"'
+--  val <- Parsec.many Parsec.anyChar
+--  Parsec.char '"'
+--  return $ Attribute (name, val)
 
 --width :: Parsec String () Attribute
-width = do
-  Parsec.string "width"
-  Parsec.spaces
-  Parsec.char '='
-  Parsec.spaces
-  Parsec.char '"'
-  val <- digits
-  Parsec.char '"'
-  return $ Width val
+--width = do
+--  Parsec.string "width"
+--  Parsec.spaces
+--  Parsec.char '='
+--  Parsec.spaces
+--  Parsec.char '"'
+--  val <- digits
+--  Parsec.char '"'
+--  return $ Width val
+width = Width <$> digits
 
 --height :: Parsec String () Attribute
-height = do
-  Parsec.string "height"
-  Parsec.spaces
-  Parsec.char '='
-  Parsec.spaces
-  Parsec.char '"'
-  val <- digits
-  Parsec.char '"'
-  return $ Height val
+--height = do
+--  Parsec.string "height"
+--  Parsec.spaces
+--  Parsec.char '='
+--  Parsec.spaces
+--  Parsec.char '"'
+--  val <- digits
+--  Parsec.char '"'
+--  return $ Height val
+height = Height <$> digits
 
 --viewBox :: Parsec String () (AttrName, AttrValue)
-viewBox = do
-  Parsec.string "viewBox"
-  Parsec.spaces
-  Parsec.char '='
-  Parsec.spaces
-  Parsec.char '"'
-  --val <- digits
-  val <- tuple4 . map read <$> (Parsec.many1 Parsec.digit) `Parsec.sepBy` Parsec.spaces
-  Parsec.char '"'
-  return $ ViewBox val
+--viewBox = do
+--  Parsec.string "viewBox"
+--  Parsec.spaces
+--  Parsec.char '='
+--  Parsec.spaces
+--  Parsec.char '"'
+--  --val <- digits
+--  val <- tuple4 . map read <$> (Parsec.many1 Parsec.digit) `Parsec.sepBy` Parsec.spaces
+--  Parsec.char '"'
+--  return $ ViewBox val
 
-d = do
-  Parsec.string "d"
-  Parsec.spaces
-  Parsec.char '='
-  Parsec.spaces
-  Parsec.char '"'
-  --val <- Parsec.many Parsec.anyChar
-  val <- Parsec.many $ Parsec.noneOf "\""
-  Parsec.char '"'
-  return $ D val
+viewBox = ViewBox . tuple4 <$> (map read) <$> (Parsec.many1 Parsec.digit) `Parsec.sepBy` Parsec.spaces
+
+--d = do
+--  Parsec.string "d"
+--  Parsec.spaces
+--  Parsec.char '='
+--  Parsec.spaces
+--  Parsec.char '"'
+--  --val <- Parsec.many Parsec.anyChar
+--  val <- Parsec.many $ Parsec.noneOf "\""
+--  Parsec.char '"'
+--  return $ D val
+d = D <$> Parsec.many (Parsec.noneOf "\"")
+
 
 --quotes :: Parsec String () String
 --quotes = Parsec.between (Parsec.symbol "\"") (Parsec.symbol "\"")
