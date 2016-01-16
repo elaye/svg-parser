@@ -78,7 +78,7 @@ eol = Parsec.skipMany Parsec.endOfLine
 
 seol = Parsec.spaces <|> eol
 
---| SVG parser.
+-- | SVG parser.
 svg :: Parsec String () SVG
 svg = do
   Parsec.spaces
@@ -93,7 +93,8 @@ svg = do
   return x
   --return decl
 
-parse :: String -> IO ()
+--parse :: String -> IO ()
+--parse :: String -> Either String SVG
 parse file = do
   let res = Parsec.parse svg "(source)" file
   case res of
@@ -102,7 +103,7 @@ parse file = do
       print svg
       --print (clean svg)
 
---| Clean the SVG. Remove all the unknown tags and attributes. 
+-- | Clean the SVG. Remove all the unknown tags and attributes. 
 -- Be carefull because it removes all the tags and attributes that
 -- are not implemented.
 clean :: SVG -> SVG
