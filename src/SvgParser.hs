@@ -10,6 +10,7 @@ import Text.Parsec ((<?>))
 import Control.Applicative
 
 import Attributes (Attribute, attribute)
+--import Elements (Element, element)
 
 data SVG = Element String [Attribute] [SVG]
           | SelfClosingTag String [Attribute]
@@ -34,7 +35,8 @@ tag = do
   Parsec.spaces
   name <- Parsec.many (Parsec.letter <|> Parsec.digit)
   Parsec.spaces
-  attr <- Parsec.many attribute
+  --attr <- Parsec.many attribute
+  attr <- attribute `Parsec.sepBy` Parsec.spaces
   Parsec.spaces
   close <- Parsec.try (Parsec.string "/>" <|> Parsec.string ">")
 
@@ -48,6 +50,15 @@ tag = do
     endTag name
     Parsec.spaces
     return (Element name attr elementBody)
+
+--xmlDecl = do
+--  Parsec.string "<?"
+--  Parsec.spaces
+--  Parsec.string "xml"
+--  Parsec.spaces
+--  Parsec.many attribute
+--  Parsec.spaces
+--  Parsec.string "?>"
 
 --svg :: Parsec String () [SVG]
 svg :: Parsec String () SVG
