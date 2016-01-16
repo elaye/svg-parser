@@ -2,6 +2,7 @@
 module Attributes
 ( Attribute
 , attribute
+, clean
 ) where
 
 import qualified Text.Parsec as Parsec
@@ -80,3 +81,9 @@ digits = read <$> Parsec.many1 Parsec.digit
 
 tuple4 :: [a] -> (a, a, a, a)
 tuple4 [a, b, c, d] = (a, b, c, d)
+
+clean :: [Attribute] -> [Attribute]
+clean attrs = filter f attrs
+  where 
+    f (Attribute (_, _)) = False
+    f _ = True

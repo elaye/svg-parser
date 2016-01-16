@@ -1,6 +1,7 @@
 {-# LANGUAGE FlexibleContexts #-}
 module SvgParser
     ( parse
+    , clean
     ) where
 
 import qualified Text.Parsec as Parsec
@@ -10,6 +11,7 @@ import Text.Parsec ((<?>))
 import Control.Applicative
 
 import Attributes (Attribute, attribute)
+import qualified Attributes as Attr
 --import Elements (Element, element)
 
 data SVG = Element String [Attribute] [SVG]
@@ -94,4 +96,14 @@ parse file = do
   let res = Parsec.parse svg "(source)" file
   case res of
     Left err -> print err
-    Right svg -> print svg
+    Right svg -> do
+      print svg
+      --print (clean svg)
+
+clean :: SVG -> SVG
+clean svg = case svg of
+  Element name attrs svgs -> Element name (Attr.clean attrs) (map clean svgs)
+  Body txt -> Body txt
+  SelfClosingTag name attrs -> SelfClosingTag name (Attr.clean attrs)
+  XMLDecl decl -> XMLDecl decl
+  Comment comment -> Comment comment
