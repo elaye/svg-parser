@@ -17,11 +17,12 @@ data SVG = Element String [Attribute] [SVG]
           | Body String
           -- | XMLDecl [Attribute]
           | XMLDecl String
+          | Comment String
           deriving (Show)
 
 -- The body of an element, consumes any leading spaces; would be nice to not have the try here
 --elementBody :: Parsec String () Body
-elementBody = Parsec.spaces *> Parsec.try tag <|> text
+elementBody = seol *> (Parsec.try tag <|> text) <* seol
 
 -- End tag, assuming thatg we had a normal, non self-closing tag
 --endTag :: String -> Parsec String () String
@@ -36,39 +37,42 @@ tag = do
   Parsec.char '<'
   Parsec.spaces
   name <- Parsec.many (Parsec.letter <|> Parsec.digit)
+  --name <- Parsec.many (Parsec.noneOf " =")
   Parsec.spaces
   --attr <- Parsec.many attribute
-  attr <- attribute `Parsec.sepBy` Parsec.spaces
-  Parsec.spaces
+  attr <- attribute `Parsec.sepBy` seol
+  --Parsec.spaces
+  seol
   close <- Parsec.try (Parsec.string "/>" <|> Parsec.string ">")
 
   -- trying just the closing string of the tag bought me
   -- an enormous performance boost, enough to make the 
   -- difference between being usable and not!
   if (length close) == 2
-  then return (SelfClosingTag name attr)
+  then do
+    seol
+    return (SelfClosingTag name attr)
   else do 
     elementBody <- Parsec.many elementBody
     endTag name
     Parsec.spaces
     return (Element name attr elementBody)
 
---xmlDecl = do
---  Parsec.string "<?"
---  Parsec.spaces
---  Parsec.string "xml"
---  Parsec.spaces
---  --attr <- XMLDecl <$> Parsec.many attribute
---  attr <- XMLDecl <$> attribute `Parsec.sepBy` Parsec.spaces
---  Parsec.spaces
---  Parsec.string "?>"
---  return attr
-
 xmlDecl = do 
   Parsec.string "<?xml" 
   decl <- Parsec.many (Parsec.noneOf "?>") 
   Parsec.string "?>"
   return $ XMLDecl decl
+
+comment = do 
+  Parsec.string "<!--" 
+  decl <- Parsec.many (Parsec.noneOf "-->") 
+  Parsec.string "-->"
+  return $ Comment decl
+
+eol = Parsec.skipMany Parsec.endOfLine
+
+seol = Parsec.spaces <|> eol
 
 --svg :: Parsec String () [SVG]
 svg :: Parsec String () SVG
@@ -78,7 +82,9 @@ svg = do
   --decl <- (Parsec.try xmlDecl <|> tag)
   --decl <- XMLDecl <$> xmlDecl
   decl <- xmlDecl
-  x <- tag
+  seol
+  comment <- comment
+  x <- seol *> tag <* seol
   Parsec.spaces
   return x
   --return decl
