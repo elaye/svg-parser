@@ -32,7 +32,7 @@ data D = MoveToAbs [(Float, Float)]
         | ClosePath
 
 --attribute :: Parsec String () Attribute
-attribute = Parsec.spaces *> Parsec.choice attributes <* Parsec.spaces
+attribute = Parsec.spaces *> (try (Parsec.choice attributes) <|> anyAttr) <* Parsec.spaces
 
 --betweenQuotes = Parsec.char '"' *> Parsec.many Parsec.anyChar <* Parsec.char '"'
 
@@ -65,15 +65,15 @@ viewBox = ViewBox . tuple4 <$> (map read) <$> (Parsec.many1 Parsec.digit) `Parse
 
 d = D <$> Parsec.many (Parsec.noneOf "\"")
 
---anyAttr = do
---  name <- Parsec.many (Parsec.noneOf "= />")
---  Parsec.spaces
---  Parsec.char '='
---  Parsec.spaces
---  Parsec.char '"'
---  val <- Parsec.many Parsec.anyChar
---  Parsec.char '"'
---  return $ Attribute (name, val)
+anyAttr = do
+  name <- Parsec.many (Parsec.noneOf "= />")
+  Parsec.spaces
+  Parsec.char '='
+  Parsec.spaces
+  Parsec.char '"'
+  val <- Parsec.many (Parsec.noneOf ['"'])
+  Parsec.char '"'
+  return $ Attribute (name, val)
 
 digits :: Parsec String () Int
 digits = read <$> Parsec.many1 Parsec.digit
