@@ -93,15 +93,7 @@ svg = do
   return x
   --return decl
 
---parse :: String -> IO ()
---parse :: String -> Either String SVG
-parse file = do
-  let res = Parsec.parse svg "(source)" file
-  case res of
-    Left err -> print err
-    Right svg -> do
-      print svg
-      --print (clean svg)
+parse file = Parsec.parse svg "(source)" file
 
 -- | Clean the SVG. Remove all the unknown tags and attributes. 
 -- Be carefull because it removes all the tags and attributes that
