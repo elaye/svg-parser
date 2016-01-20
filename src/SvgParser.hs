@@ -14,7 +14,7 @@ import Control.Applicative
 
 import Attributes (Attribute, attribute)
 import qualified Attributes as Attr
---import Elements (Element, element)
+import qualified Elements as Elem
 
 data SVG = Element String [Attribute] [SVG]
           | SelfClosingTag String [Attribute]
