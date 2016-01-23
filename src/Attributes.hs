@@ -1,6 +1,6 @@
 {-# LANGUAGE FlexibleContexts #-}
 module Attributes
-( Attribute
+( Attribute(..)
 , attribute
 , clean
 ) where
@@ -19,7 +19,7 @@ data Attribute = Width Int
                 | ViewBox (Int, Int, Int, Int)
                 | D String
                 | Attribute (AttrName, AttrValue)
-                deriving (Show)
+                deriving (Eq, Show)
 
 data D = MoveToAbs [(Float, Float)]
         | MoveToRel [(Float, Float)]

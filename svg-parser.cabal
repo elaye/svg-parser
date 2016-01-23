@@ -16,8 +16,10 @@ cabal-version:       >=1.10
 library
   hs-source-dirs:      src
   exposed-modules:     SvgParser
-  other-modules:       Attributes
+                     , Attributes
                      , Elements
+--  other-modules:       Attributes
+--                     , Elements
   build-depends:       base >= 4.7 && < 5
                       , parsec
   default-language:    Haskell2010
@@ -35,7 +37,9 @@ test-suite svg-parser-test
   hs-source-dirs:      test
   main-is:             Spec.hs
   build-depends:       base
+                     , HUnit
                      , svg-parser
+                     , parsec
   ghc-options:         -threaded -rtsopts -with-rtsopts=-N
   default-language:    Haskell2010
 
