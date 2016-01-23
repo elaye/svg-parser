@@ -22,7 +22,7 @@ data SVG = Element String [Attribute] [SVG]
           -- | XMLDecl [Attribute]
           | XMLDecl String
           | Comment String
-          deriving (Show)
+          deriving (Eq, Show)
 
 -- The body of an element, consumes any leading spaces; would be nice to not have the try here
 --elementBody :: Parsec String () Body
