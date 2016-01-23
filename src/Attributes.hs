@@ -1,4 +1,5 @@
 {-# LANGUAGE FlexibleContexts #-}
+
 module Attributes
 ( Attribute(..)
 , attribute
@@ -11,9 +12,13 @@ import Text.Parsec.Char (digit)
 import qualified Text.Parsec.Combinator as Parsec (choice)
 
 
+-- | Generic attribute name.
 type AttrName = String
+-- | Generic attribute value.
 type AttrValue = String
 
+-- | Data type representing the possible SVG attributes
+-- according to <https://developer.mozilla.org/en-US/docs/Web/SVG/Attribute>
 data Attribute = Width Int
                 | Height Int
                 | ViewBox (Int, Int, Int, Int)
@@ -32,15 +37,16 @@ data D = MoveToAbs [(Float, Float)]
         | ArcTo String
         | ClosePath
 
---attribute :: Parsec String () Attribute
+-- | Parse an attribute.
+attribute :: Parsec String () Attribute
 attribute = Parsec.spaces *> (Parsec.try (Parsec.choice attributes) <|> anyAttr) <* Parsec.spaces
 
---betweenQuotes = Parsec.char '"' *> Parsec.many Parsec.anyChar <* Parsec.char '"'
-
---attributes = map mkParser attrDefs : anyAttr
+-- | List of all the attribute parsers.
 attributes :: [Parsec String () Attribute]
 attributes = map attrParser attrDefs
 
+-- | Construct an attribute parser given its name.
+attrParser :: (String, Parsec String () Attribute) -> Parsec String () Attribute
 attrParser (name, parser) = do
   Parsec.string name
   Parsec.spaces
@@ -51,6 +57,7 @@ attrParser (name, parser) = do
   Parsec.char '"'
   return $ val
 
+-- | Attributes name and their corresponding parsers.
 attrDefs =
   [ ("height", height)
   , ("width", width)
@@ -58,14 +65,20 @@ attrDefs =
   , ("d", d)
   ]
 
+width :: Parsec String () Attribute
 width = Width <$> digits
 
+height :: Parsec String () Attribute
 height = Height <$> digits
 
+viewBox :: Parsec String () Attribute
 viewBox = ViewBox . tuple4 <$> (map read) <$> (Parsec.many1 Parsec.digit) `Parsec.sepBy` Parsec.spaces
 
+d :: Parsec String () Attribute
 d = D <$> Parsec.many (Parsec.noneOf "\"")
 
+-- | Any attribute.
+anyAttr :: Parsec String () Attribute
 anyAttr = do
   name <- Parsec.many (Parsec.noneOf "= />")
   Parsec.spaces
@@ -82,6 +95,8 @@ digits = read <$> Parsec.many1 Parsec.digit
 tuple4 :: [a] -> (a, a, a, a)
 tuple4 [a, b, c, d] = (a, b, c, d)
 
+-- | Filter a list of attributes to keep only 
+-- the ones listed in the 'Attribute' data type.
 clean :: [Attribute] -> [Attribute]
 clean attrs = filter f attrs
   where 

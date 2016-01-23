@@ -1,4 +1,5 @@
 {-# LANGUAGE FlexibleContexts #-}
+
 module Elements
 ( ElementName
 , tags
@@ -14,6 +15,7 @@ import Text.Parsec (Parsec)
 import qualified Text.Parsec.Combinator as Parsec (choice)
 import Text.Parsec (Parsec, (<|>))
 
+-- | Data type representing the possible SVG tags.
 data ElementName = 
   -- A
   A | AltGlyph | AltGlyphDef | AltGlyphItem | Animate | AnimateColor | AnimateMotion | AnimateTransform
@@ -55,6 +57,7 @@ data ElementName =
   | ElementName String
   deriving (Eq, Show)
 
+-- | Tags name and their corresponding data constructor.
 tagsDef :: [(String, ElementName)]
 tagsDef = [ 
         -- A
@@ -102,16 +105,20 @@ tagsDef = [
         , ("view", View), ("vkern", Vkern)
         ]
 
+-- | Parse a tag.
 tag :: Parsec String () ElementName
 tag = Parsec.choice tags <|> anyTag
 
+-- | Parse an end tag given the element name.
 endTag tag = Parsec.string "</" *> Parsec.string (toString tag) <* Parsec.char '>'
 
+-- | Convert an 'ElementName' into a string.
 toString :: ElementName -> String
 toString tag = case (find (\x -> (snd x) == tag) tagsDef) of
   Nothing -> ""
   Just (str, _) -> str
 
+-- | List of all the tag parsers.
 tags :: [Parsec String () ElementName]
 tags = map parser tagsDef
   where 
@@ -119,10 +126,12 @@ tags = map parser tagsDef
       Parsec.try $ Parsec.string str
       return cons
 
+-- | Return 'Nothing' if the provided element name is not listed in the 'ElementName' data type.
 clean :: ElementName -> Maybe ElementName
 clean (ElementName _) = Nothing
 clean el = Just el
 
+-- | Any element.
 anyTag :: Parsec String () ElementName
 anyTag = do
   name <- Parsec.many1 $ Parsec.noneOf " =\n\r"

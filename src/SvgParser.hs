@@ -1,12 +1,13 @@
 {-# LANGUAGE FlexibleContexts #-}
+
 module SvgParser
-    ( SVG(..)
-    , svg
-    , parse
-    , parseFile
-    , clean
-    , prettyPrint
-    ) where
+( SVG(..)
+, svg
+, parse
+, parseFile
+, clean
+, prettyPrint
+) where
 
 import qualified Text.Parsec as Parsec
 import Text.Parsec (Parsec, ParseError)
@@ -20,29 +21,25 @@ import qualified Attributes as Attr
 import Elements (ElementName)
 import qualified Elements as Elem
 
---data SVG = Element String [Attribute] [SVG]
+-- | Data type representing an SVG document.
 data SVG = Element ElementName [Attribute] [SVG]
           | SelfClosingTag ElementName [Attribute]
           | Body String
-          -- | XMLDecl [Attribute]
           | XMLDecl String
           | Comment String
           deriving (Eq, Show)
 
--- The body of an element, consumes any leading spaces; would be nice to not have the try here
---elementBody :: Parsec String () Body
-elementBody = seol *> (Parsec.try tag <|> text) <* seol
+-- | Parse the children of an element.
+elementBody :: Parsec String () SVG
+elementBody = seol *> (Parsec.try element <|> text) <* seol
 
--- End tag, assuming thatg we had a normal, non self-closing tag
---endTag :: String -> Parsec String () String
---endTag str = Parsec.string "</" *> Parsec.string str <* Parsec.char '>'
-
--- Create a body XML element, from text up to the next tag 
---text :: Parsec String () Body
+-- | Parse the body of an element.
+text :: Parsec String () SVG
 text = Body <$> Parsec.many1 (Parsec.noneOf "><")
 
-tag :: Parsec String () SVG
-tag = do
+-- | SVG element parser.
+element :: Parsec String () SVG
+element = do
   Parsec.char '<'
   Parsec.spaces
   name <- Elem.tag
@@ -51,9 +48,6 @@ tag = do
   seol
   close <- Parsec.try (Parsec.string "/>" <|> Parsec.string ">")
 
-  -- trying just the closing string of the tag bought me
-  -- an enormous performance boost, enough to make the 
-  -- difference between being usable and not!
   if (length close) == 2
   then do
     seol
@@ -64,36 +58,36 @@ tag = do
     Parsec.spaces
     return (Element name attr elementBody)
 
+-- | XML declaration parser.
 xmlDecl = do 
   Parsec.string "<?xml" 
   decl <- Parsec.many (Parsec.noneOf "?>") 
   Parsec.string "?>"
   return $ XMLDecl decl
 
+-- | Comment parser.
 comment = do 
   Parsec.string "<!--" 
   decl <- Parsec.many (Parsec.noneOf "-->") 
   Parsec.string "-->"
   return $ Comment decl
 
+-- | Skip many end of lines.
 eol = Parsec.skipMany Parsec.endOfLine
 
+-- | Skip many spaces or end of lines.
 seol = Parsec.spaces <|> eol
 
 -- | SVG parser.
 svg :: Parsec String () SVG
 svg = do
   Parsec.spaces
-  --x <- Parsec.many tag
-  --decl <- (Parsec.try xmlDecl <|> tag)
-  --decl <- XMLDecl <$> xmlDecl
   decl <- xmlDecl
   seol
   comment <- comment
-  x <- seol *> tag <* seol
+  x <- seol *> element <* seol
   Parsec.spaces
   return x
-  --return decl
 
 -- | Open and parse a file.
 parseFile :: FilePath -> IO (Either ParseError SVG)
@@ -124,6 +118,7 @@ clean svg = case svg of
   XMLDecl decl -> Just $ XMLDecl decl
   Comment comment -> Just $ Comment comment
 
+-- | Pretty print an SVG to the terminal.
 prettyPrint :: SVG -> String
 prettyPrint svg = case svg of
   Element name attrs svgs -> (show name) ++ " " ++ (show attrs) ++ "\n\n\t" ++ (unlines $ map prettyPrint svgs)
@@ -131,4 +126,3 @@ prettyPrint svg = case svg of
   SelfClosingTag name attrs -> (show name) ++ " " ++ (show attrs)
   XMLDecl decl -> show decl
   Comment comment -> show comment
-
