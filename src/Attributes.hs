@@ -6,7 +6,7 @@ module Attributes
 ) where
 
 import qualified Text.Parsec as Parsec
-import Text.Parsec (Parsec, between, (<?>), (<|>), try)
+import Text.Parsec (Parsec, (<?>), (<|>))
 import Text.Parsec.Char (digit)
 import qualified Text.Parsec.Combinator as Parsec (choice)
 
@@ -33,7 +33,7 @@ data D = MoveToAbs [(Float, Float)]
         | ClosePath
 
 --attribute :: Parsec String () Attribute
-attribute = Parsec.spaces *> (try (Parsec.choice attributes) <|> anyAttr) <* Parsec.spaces
+attribute = Parsec.spaces *> (Parsec.try (Parsec.choice attributes) <|> anyAttr) <* Parsec.spaces
 
 --betweenQuotes = Parsec.char '"' *> Parsec.many Parsec.anyChar <* Parsec.char '"'
 
