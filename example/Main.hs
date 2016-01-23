@@ -1,11 +1,11 @@
 module Main where
 
-import qualified SvgParser as SVG (parse, clean)
+import qualified SvgParser as SVG
 import SvgParser (SVG)
 
 main :: IO ()
 main = do
-  svg <- readFile "square_test.svg"
+  svg <- readFile "test/svg/square_test.svg"
   case (SVG.parse svg) of
     Left err -> printErr (show err)
     Right result -> printSVG result
