@@ -4,6 +4,7 @@ module SvgParser
     , svg
     , parse
     , clean
+    , prettyPrint
     ) where
 
 import qualified Text.Parsec as Parsec
@@ -105,3 +106,12 @@ clean svg = case svg of
   SelfClosingTag name attrs -> SelfClosingTag name (Attr.clean attrs)
   XMLDecl decl -> XMLDecl decl
   Comment comment -> Comment comment
+
+prettyPrint :: SVG -> String
+prettyPrint svg = case svg of
+  Element name attrs svgs -> name ++ " " ++ (show attrs) ++ "\n\n\t" ++ (unlines $ map prettyPrint svgs)
+  Body txt -> show txt
+  SelfClosingTag name attrs -> name ++ " " ++ (show attrs)
+  XMLDecl decl -> show decl
+  Comment comment -> show comment
+

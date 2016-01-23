@@ -14,10 +14,10 @@ printSVG :: SVG -> IO ()
 printSVG svg = do
   putStrLn "\n-------------------------"
   putStrLn "SVG\n"
-  putStrLn (show svg)
+  putStrLn (SVG.prettyPrint svg)
   putStrLn "\n-------------------------"
   putStrLn "Cleaned SVG\n"
-  putStrLn $ show $ SVG.clean svg
+  putStrLn $ SVG.prettyPrint $ SVG.clean svg
   putStrLn "-------------------------"
 
 printErr :: String -> IO ()
