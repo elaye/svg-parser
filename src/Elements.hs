@@ -1,7 +1,18 @@
+{-# LANGUAGE FlexibleContexts #-}
 module Elements
 ( ElementName
 , tags
+, tag
+, endTag
+, clean
 ) where
+
+import Data.List (find)
+
+import qualified Text.Parsec as Parsec
+import Text.Parsec (Parsec)
+import qualified Text.Parsec.Combinator as Parsec (choice)
+import Text.Parsec (Parsec, (<|>))
 
 data ElementName = 
   -- A
@@ -41,12 +52,11 @@ data ElementName =
   | Use
   -- V - Z
   | View | Vkern
-  deriving (Show)
+  | ElementName String
+  deriving (Eq, Show)
 
-
-
-tags :: [(String, ElementName)]
-tags = [ 
+tagsDef :: [(String, ElementName)]
+tagsDef = [ 
         -- A
         ("A", A), ("altGlyph", AltGlyph), ("altGlyphDef", AltGlyphDef), ("altGlyphItem", AltGlyphItem)
         , ("animate", Animate), ("animateColor", AnimateColor), ("animateMotion", AnimateMotion)
@@ -91,3 +101,29 @@ tags = [
         -- V - Z
         , ("view", View), ("vkern", Vkern)
         ]
+
+tag :: Parsec String () ElementName
+tag = Parsec.choice tags <|> anyTag
+
+endTag tag = Parsec.string "</" *> Parsec.string (toString tag) <* Parsec.char '>'
+
+toString :: ElementName -> String
+toString tag = case (find (\x -> (snd x) == tag) tagsDef) of
+  Nothing -> ""
+  Just (str, _) -> str
+
+tags :: [Parsec String () ElementName]
+tags = map parser tagsDef
+  where 
+    parser (str, cons) = do
+      Parsec.try $ Parsec.string str
+      return cons
+
+clean :: ElementName -> Maybe ElementName
+clean (ElementName _) = Nothing
+clean el = Just el
+
+anyTag :: Parsec String () ElementName
+anyTag = do
+  name <- Parsec.many1 $ Parsec.noneOf " =\n\r"
+  return $ ElementName name

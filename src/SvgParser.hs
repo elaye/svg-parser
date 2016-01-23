@@ -3,22 +3,26 @@ module SvgParser
     ( SVG(..)
     , svg
     , parse
+    , parseFile
     , clean
     , prettyPrint
     ) where
 
 import qualified Text.Parsec as Parsec
-import Text.Parsec (Parsec)
+import Text.Parsec (Parsec, ParseError)
 import Text.Parsec ((<?>))
 
+import Data.Maybe (mapMaybe)
 import Control.Applicative
 
 import Attributes (Attribute, attribute)
 import qualified Attributes as Attr
+import Elements (ElementName)
 import qualified Elements as Elem
 
-data SVG = Element String [Attribute] [SVG]
-          | SelfClosingTag String [Attribute]
+--data SVG = Element String [Attribute] [SVG]
+data SVG = Element ElementName [Attribute] [SVG]
+          | SelfClosingTag ElementName [Attribute]
           | Body String
           -- | XMLDecl [Attribute]
           | XMLDecl String
@@ -31,7 +35,7 @@ elementBody = seol *> (Parsec.try tag <|> text) <* seol
 
 -- End tag, assuming thatg we had a normal, non self-closing tag
 --endTag :: String -> Parsec String () String
-endTag str = Parsec.string "</" *> Parsec.string str <* Parsec.char '>'
+--endTag str = Parsec.string "</" *> Parsec.string str <* Parsec.char '>'
 
 -- Create a body XML element, from text up to the next tag 
 --text :: Parsec String () Body
@@ -41,12 +45,9 @@ tag :: Parsec String () SVG
 tag = do
   Parsec.char '<'
   Parsec.spaces
-  name <- Parsec.many (Parsec.letter <|> Parsec.digit)
-  --name <- Parsec.many (Parsec.noneOf " =")
-  Parsec.spaces
-  --attr <- Parsec.many attribute
+  name <- Elem.tag
+  seol
   attr <- attribute `Parsec.sepBy` seol
-  --Parsec.spaces
   seol
   close <- Parsec.try (Parsec.string "/>" <|> Parsec.string ">")
 
@@ -59,7 +60,7 @@ tag = do
     return (SelfClosingTag name attr)
   else do 
     elementBody <- Parsec.many elementBody
-    endTag name
+    Elem.endTag name
     Parsec.spaces
     return (Element name attr elementBody)
 
@@ -94,24 +95,40 @@ svg = do
   return x
   --return decl
 
-parse file = Parsec.parse svg "(source)" file
+-- | Open and parse a file.
+parseFile :: FilePath -> IO (Either ParseError SVG)
+parseFile filename = do
+  file <- readFile filename
+  return $ parseSource filename file
+
+-- | Parse a string.
+parse :: String -> Either ParseError SVG
+parse file = parseSource "(source)" file 
+
+-- | Parse a string with a specified source name.
+parseSource :: String -> String -> Either ParseError SVG
+parseSource name file = Parsec.parse svg name file
 
 -- | Clean the SVG. Remove all the unknown tags and attributes. 
 -- Be carefull because it removes all the tags and attributes that
 -- are not implemented.
-clean :: SVG -> SVG
+clean :: SVG -> Maybe SVG
 clean svg = case svg of
-  Element name attrs svgs -> Element name (Attr.clean attrs) (map clean svgs)
-  Body txt -> Body txt
-  SelfClosingTag name attrs -> SelfClosingTag name (Attr.clean attrs)
-  XMLDecl decl -> XMLDecl decl
-  Comment comment -> Comment comment
+  Element name attrs svgs -> case (Elem.clean name) of
+    Nothing -> Nothing
+    Just _ -> Just $ Element name (Attr.clean attrs) (mapMaybe clean svgs)
+  Body txt -> Just $ Body txt
+  SelfClosingTag name attrs -> case (Elem.clean name) of
+    Nothing -> Nothing
+    Just _ -> Just $ SelfClosingTag name (Attr.clean attrs)
+  XMLDecl decl -> Just $ XMLDecl decl
+  Comment comment -> Just $ Comment comment
 
 prettyPrint :: SVG -> String
 prettyPrint svg = case svg of
-  Element name attrs svgs -> name ++ " " ++ (show attrs) ++ "\n\n\t" ++ (unlines $ map prettyPrint svgs)
+  Element name attrs svgs -> (show name) ++ " " ++ (show attrs) ++ "\n\n\t" ++ (unlines $ map prettyPrint svgs)
   Body txt -> show txt
-  SelfClosingTag name attrs -> name ++ " " ++ (show attrs)
+  SelfClosingTag name attrs -> (show name) ++ " " ++ (show attrs)
   XMLDecl decl -> show decl
   Comment comment -> show comment
 

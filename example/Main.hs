@@ -17,7 +17,9 @@ printSVG svg = do
   putStrLn (SVG.prettyPrint svg)
   putStrLn "\n-------------------------"
   putStrLn "Cleaned SVG\n"
-  putStrLn $ SVG.prettyPrint $ SVG.clean svg
+  putStrLn $ case (SVG.clean svg) of
+    Just s -> SVG.prettyPrint s
+    Nothing -> "Empty SVG"
   putStrLn "-------------------------"
 
 printErr :: String -> IO ()
